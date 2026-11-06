@@ -30,17 +30,19 @@ export default function UploadPage() {
     <Box sx={{ minHeight: '100vh' }}>
       <AppHeader />
       <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box>
+          <Typography variant="h5" component="h2" gutterBottom>
+            Compare two XML files
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 3 }}>
+            1. Upload both files &nbsp;›&nbsp; 2. Choose options and compare &nbsp;›&nbsp; 3. Review
+            the differences. Everything stays on this computer.
+          </Typography>
+        </Box>
+
         <Grid container spacing={4}>
           {/* Left: the comparison workflow */}
           <Grid size={{ xs: 12, lg: 8 }}>
-            <Typography variant="h5" component="h2" gutterBottom>
-              Compare two XML files
-            </Typography>
-            <Typography color="text.secondary" sx={{ mb: 3 }}>
-              1. Upload both files &nbsp;›&nbsp; 2. Choose options and compare &nbsp;›&nbsp; 3.
-              Review the differences. Everything stays on this computer.
-            </Typography>
-
             <Grid container spacing={3} sx={{ mb: 3 }}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <UploadCard
