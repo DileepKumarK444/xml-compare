@@ -1,0 +1,515 @@
+{
+ "options": {
+  "ignore_whitespace": true,
+  "ignore_comments": false,
+  "ignore_order": false
+ },
+ "original": {
+  "filename": "original.xml",
+  "size": 754,
+  "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Legislation xmlns=\"http://example.org/legislation\" id=\"act-2020-12\">\n  <!-- Draft of the Data Protection Act -->\n  <Title>Data Protection Act</Title>\n  <Section id=\"s1\" number=\"1\">\n    <Heading>Definitions</Heading>\n    <Text>In this Act, \"controller\" means the person who determines the purposes of processing.</Text>\n    <Reference href=\"act-2018-04\">Previous reference content</Reference>\n  </Section>\n  <Section id=\"s2\" number=\"2\" status=\"draft\">\n    <Heading>Scope</Heading>\n    <Text>This Act applies to all processing of personal data.</Text>\n  </Section>\n  <Section id=\"s3\" number=\"3\">\n    <Heading>Penalties</Heading>\n    <Text>A fine not exceeding 1000 may be imposed.</Text>\n  </Section>\n</Legislation>\n"
+ },
+ "modified": {
+  "filename": "modified.xml",
+  "size": 878,
+  "text": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Legislation xmlns=\"http://example.org/legislation\" id=\"act-2020-12\">\n  <!-- Draft of the Data Protection Act -->\n  <Title>Data Protection Act</Title>\n  <Section id=\"s1\" number=\"1\">\n    <Heading>Interpretation</Heading>\n    <Text>In this Act, \"controller\" means the person who determines the purposes of processing.</Text>\n    <Text>New content</Text>\n  </Section>\n  <Section id=\"s2\" number=\"2\" status=\"final\" effective=\"2021-01-01\">\n    <Heading>Scope</Heading>\n    <Text>This Act applies to all processing of personal data.</Text>\n  </Section>\n  <Section id=\"s3\" number=\"3\">\n    <Heading>Penalties</Heading>\n    <Text>A fine not exceeding 5000 may be imposed.</Text>\n  </Section>\n  <Section id=\"s4\" number=\"4\">\n    <Heading>Commencement</Heading>\n    <Text>This Act comes into force on 1 January 2021.</Text>\n  </Section>\n</Legislation>\n"
+ },
+ "source": {
+  "summary": {
+   "total": 5,
+   "added": 1,
+   "removed": 0,
+   "modified": 4,
+   "unchanged": 14
+  },
+  "differences": [
+   {
+    "id": 1,
+    "type": "modified",
+    "original_start": 6,
+    "original_end": 6,
+    "modified_start": 6,
+    "modified_end": 6,
+    "description": "Changed line 6 \u2192 line 6",
+    "preview": "<Heading>Definitions</Heading>  \u2192  <Heading>Interpretation</Heading>"
+   },
+   {
+    "id": 2,
+    "type": "modified",
+    "original_start": 8,
+    "original_end": 8,
+    "modified_start": 8,
+    "modified_end": 8,
+    "description": "Changed line 8 \u2192 line 8",
+    "preview": "<Reference href=\"act-2018-04\">Previous reference content</Reference>  \u2192  <Text>New content</Text>"
+   },
+   {
+    "id": 3,
+    "type": "modified",
+    "original_start": 10,
+    "original_end": 10,
+    "modified_start": 10,
+    "modified_end": 10,
+    "description": "Changed line 10 \u2192 line 10",
+    "preview": "<Section id=\"s2\" number=\"2\" status=\"draft\">  \u2192  <Section id=\"s2\" number=\"2\" status=\"final\" effective=\"2021-01-01\">"
+   },
+   {
+    "id": 4,
+    "type": "modified",
+    "original_start": 16,
+    "original_end": 16,
+    "modified_start": 16,
+    "modified_end": 16,
+    "description": "Changed line 16 \u2192 line 16",
+    "preview": "<Text>A fine not exceeding 1000 may be imposed.</Text>  \u2192  <Text>A fine not exceeding 5000 may be imposed.</Text>"
+   },
+   {
+    "id": 5,
+    "type": "added",
+    "original_start": null,
+    "original_end": null,
+    "modified_start": 17,
+    "modified_end": 20,
+    "description": "Added lines 17\u201320",
+    "preview": "</Section> <Section id=\"s4\" number=\"4\"> <Heading>Commencement</Heading> <Text>This Act comes into force on 1 January 2021.</Text>"
+   }
+  ]
+ },
+ "content": {
+  "summary": {
+   "total": 7,
+   "added": 3,
+   "removed": 1,
+   "modified": 3,
+   "unchanged": 9
+  },
+  "differences": [
+   {
+    "id": 1,
+    "type": "modified",
+    "kind": "text",
+    "path": "/Legislation[@id='act-2020-12']/Section[@id='s1']/Heading",
+    "name": "Heading",
+    "original_value": "Definitions",
+    "modified_value": "Interpretation",
+    "original_attributes": {},
+    "modified_attributes": {},
+    "description": "Text changed: 'Definitions' \u2192 'Interpretation'",
+    "node_id": "n6"
+   },
+   {
+    "id": 2,
+    "type": "added",
+    "kind": "element",
+    "path": "/Legislation[@id='act-2020-12']/Section[@id='s1']/Text[2]",
+    "name": "Text",
+    "original_value": null,
+    "modified_value": "New content",
+    "original_attributes": null,
+    "modified_attributes": {},
+    "description": "Element <Text> added",
+    "node_id": "n8"
+   },
+   {
+    "id": 3,
+    "type": "removed",
+    "kind": "element",
+    "path": "/Legislation[@id='act-2020-12']/Section[@id='s1']/Reference",
+    "name": "Reference",
+    "original_value": "Previous reference content",
+    "modified_value": null,
+    "original_attributes": {
+     "href": "act-2018-04"
+    },
+    "modified_attributes": null,
+    "description": "Element <Reference> removed",
+    "node_id": "n9"
+   },
+   {
+    "id": 4,
+    "type": "added",
+    "kind": "attribute",
+    "path": "/Legislation[@id='act-2020-12']/Section[@id='s2']/@effective",
+    "name": "@effective",
+    "original_value": null,
+    "modified_value": "2021-01-01",
+    "original_attributes": null,
+    "modified_attributes": null,
+    "description": "Attribute @effective added: '2021-01-01'",
+    "node_id": "n11"
+   },
+   {
+    "id": 5,
+    "type": "modified",
+    "kind": "attribute",
+    "path": "/Legislation[@id='act-2020-12']/Section[@id='s2']/@status",
+    "name": "@status",
+    "original_value": "draft",
+    "modified_value": "final",
+    "original_attributes": null,
+    "modified_attributes": null,
+    "description": "Attribute @status: 'draft' \u2192 'final'",
+    "node_id": "n12"
+   },
+   {
+    "id": 6,
+    "type": "modified",
+    "kind": "text",
+    "path": "/Legislation[@id='act-2020-12']/Section[@id='s3']/Text",
+    "name": "Text",
+    "original_value": "A fine not exceeding 1000 may be imposed.",
+    "modified_value": "A fine not exceeding 5000 may be imposed.",
+    "original_attributes": {},
+    "modified_attributes": {},
+    "description": "Text changed: 'A fine not exceeding 1000 may be imposed.' \u2192 'A fine not exceeding 5000 may be imposed.'",
+    "node_id": "n17"
+   },
+   {
+    "id": 7,
+    "type": "added",
+    "kind": "element",
+    "path": "/Legislation[@id='act-2020-12']/Section[@id='s4']",
+    "name": "Section",
+    "original_value": null,
+    "modified_value": null,
+    "original_attributes": null,
+    "modified_attributes": {
+     "id": "s4",
+     "number": "4"
+    },
+    "description": "Element <Section> added with 2 nested nodes",
+    "node_id": "n18"
+   }
+  ],
+  "tree": {
+   "id": "n1",
+   "kind": "element",
+   "name": "Document",
+   "path": "/",
+   "status": "unchanged",
+   "original_value": null,
+   "modified_value": null,
+   "original_attributes": {},
+   "modified_attributes": {},
+   "difference_ids": [],
+   "has_changes": true,
+   "children": [
+    {
+     "id": "n2",
+     "kind": "element",
+     "name": "Legislation",
+     "path": "/Legislation[@id='act-2020-12']",
+     "status": "unchanged",
+     "original_value": null,
+     "modified_value": null,
+     "original_attributes": {
+      "id": "act-2020-12"
+     },
+     "modified_attributes": {
+      "id": "act-2020-12"
+     },
+     "difference_ids": [],
+     "has_changes": true,
+     "children": [
+      {
+       "id": "n3",
+       "kind": "comment",
+       "name": "#comment",
+       "path": "/Legislation[@id='act-2020-12']/comment()",
+       "status": "unchanged",
+       "original_value": "Draft of the Data Protection Act",
+       "modified_value": "Draft of the Data Protection Act",
+       "original_attributes": null,
+       "modified_attributes": null,
+       "difference_ids": [],
+       "has_changes": false,
+       "children": []
+      },
+      {
+       "id": "n4",
+       "kind": "element",
+       "name": "Title",
+       "path": "/Legislation[@id='act-2020-12']/Title",
+       "status": "unchanged",
+       "original_value": "Data Protection Act",
+       "modified_value": "Data Protection Act",
+       "original_attributes": {},
+       "modified_attributes": {},
+       "difference_ids": [],
+       "has_changes": false,
+       "children": []
+      },
+      {
+       "id": "n5",
+       "kind": "element",
+       "name": "Section",
+       "path": "/Legislation[@id='act-2020-12']/Section[@id='s1']",
+       "status": "unchanged",
+       "original_value": null,
+       "modified_value": null,
+       "original_attributes": {
+        "id": "s1",
+        "number": "1"
+       },
+       "modified_attributes": {
+        "id": "s1",
+        "number": "1"
+       },
+       "difference_ids": [],
+       "has_changes": true,
+       "children": [
+        {
+         "id": "n6",
+         "kind": "element",
+         "name": "Heading",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s1']/Heading",
+         "status": "modified",
+         "original_value": "Definitions",
+         "modified_value": "Interpretation",
+         "original_attributes": {},
+         "modified_attributes": {},
+         "difference_ids": [
+          1
+         ],
+         "has_changes": true,
+         "children": []
+        },
+        {
+         "id": "n7",
+         "kind": "element",
+         "name": "Text",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s1']/Text[1]",
+         "status": "unchanged",
+         "original_value": "In this Act, \"controller\" means the person who determines the purposes of processing.",
+         "modified_value": "In this Act, \"controller\" means the person who determines the purposes of processing.",
+         "original_attributes": {},
+         "modified_attributes": {},
+         "difference_ids": [],
+         "has_changes": false,
+         "children": []
+        },
+        {
+         "id": "n9",
+         "kind": "element",
+         "name": "Reference",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s1']/Reference",
+         "status": "removed",
+         "original_value": "Previous reference content",
+         "modified_value": null,
+         "original_attributes": {
+          "href": "act-2018-04"
+         },
+         "modified_attributes": null,
+         "difference_ids": [
+          3
+         ],
+         "has_changes": true,
+         "children": []
+        },
+        {
+         "id": "n8",
+         "kind": "element",
+         "name": "Text",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s1']/Text[2]",
+         "status": "added",
+         "original_value": null,
+         "modified_value": "New content",
+         "original_attributes": null,
+         "modified_attributes": {},
+         "difference_ids": [
+          2
+         ],
+         "has_changes": true,
+         "children": []
+        }
+       ]
+      },
+      {
+       "id": "n10",
+       "kind": "element",
+       "name": "Section",
+       "path": "/Legislation[@id='act-2020-12']/Section[@id='s2']",
+       "status": "modified",
+       "original_value": null,
+       "modified_value": null,
+       "original_attributes": {
+        "id": "s2",
+        "number": "2",
+        "status": "draft"
+       },
+       "modified_attributes": {
+        "id": "s2",
+        "number": "2",
+        "status": "final",
+        "effective": "2021-01-01"
+       },
+       "difference_ids": [],
+       "has_changes": true,
+       "children": [
+        {
+         "id": "n11",
+         "kind": "attribute",
+         "name": "@effective",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s2']/@effective",
+         "status": "added",
+         "original_value": null,
+         "modified_value": "2021-01-01",
+         "original_attributes": null,
+         "modified_attributes": null,
+         "difference_ids": [
+          4
+         ],
+         "has_changes": true,
+         "children": []
+        },
+        {
+         "id": "n12",
+         "kind": "attribute",
+         "name": "@status",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s2']/@status",
+         "status": "modified",
+         "original_value": "draft",
+         "modified_value": "final",
+         "original_attributes": null,
+         "modified_attributes": null,
+         "difference_ids": [
+          5
+         ],
+         "has_changes": true,
+         "children": []
+        },
+        {
+         "id": "n13",
+         "kind": "element",
+         "name": "Heading",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s2']/Heading",
+         "status": "unchanged",
+         "original_value": "Scope",
+         "modified_value": "Scope",
+         "original_attributes": {},
+         "modified_attributes": {},
+         "difference_ids": [],
+         "has_changes": false,
+         "children": []
+        },
+        {
+         "id": "n14",
+         "kind": "element",
+         "name": "Text",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s2']/Text",
+         "status": "unchanged",
+         "original_value": "This Act applies to all processing of personal data.",
+         "modified_value": "This Act applies to all processing of personal data.",
+         "original_attributes": {},
+         "modified_attributes": {},
+         "difference_ids": [],
+         "has_changes": false,
+         "children": []
+        }
+       ]
+      },
+      {
+       "id": "n15",
+       "kind": "element",
+       "name": "Section",
+       "path": "/Legislation[@id='act-2020-12']/Section[@id='s3']",
+       "status": "unchanged",
+       "original_value": null,
+       "modified_value": null,
+       "original_attributes": {
+        "id": "s3",
+        "number": "3"
+       },
+       "modified_attributes": {
+        "id": "s3",
+        "number": "3"
+       },
+       "difference_ids": [],
+       "has_changes": true,
+       "children": [
+        {
+         "id": "n16",
+         "kind": "element",
+         "name": "Heading",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s3']/Heading",
+         "status": "unchanged",
+         "original_value": "Penalties",
+         "modified_value": "Penalties",
+         "original_attributes": {},
+         "modified_attributes": {},
+         "difference_ids": [],
+         "has_changes": false,
+         "children": []
+        },
+        {
+         "id": "n17",
+         "kind": "element",
+         "name": "Text",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s3']/Text",
+         "status": "modified",
+         "original_value": "A fine not exceeding 1000 may be imposed.",
+         "modified_value": "A fine not exceeding 5000 may be imposed.",
+         "original_attributes": {},
+         "modified_attributes": {},
+         "difference_ids": [
+          6
+         ],
+         "has_changes": true,
+         "children": []
+        }
+       ]
+      },
+      {
+       "id": "n18",
+       "kind": "element",
+       "name": "Section",
+       "path": "/Legislation[@id='act-2020-12']/Section[@id='s4']",
+       "status": "added",
+       "original_value": null,
+       "modified_value": null,
+       "original_attributes": null,
+       "modified_attributes": {
+        "id": "s4",
+        "number": "4"
+       },
+       "difference_ids": [
+        7
+       ],
+       "has_changes": true,
+       "children": [
+        {
+         "id": "n19",
+         "kind": "element",
+         "name": "Heading",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s4']/Heading",
+         "status": "added",
+         "original_value": null,
+         "modified_value": "Commencement",
+         "original_attributes": null,
+         "modified_attributes": {},
+         "difference_ids": [],
+         "has_changes": true,
+         "children": []
+        },
+        {
+         "id": "n20",
+         "kind": "element",
+         "name": "Text",
+         "path": "/Legislation[@id='act-2020-12']/Section[@id='s4']/Text",
+         "status": "added",
+         "original_value": null,
+         "modified_value": "This Act comes into force on 1 January 2021.",
+         "original_attributes": null,
+         "modified_attributes": {},
+         "difference_ids": [],
+         "has_changes": true,
+         "children": []
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

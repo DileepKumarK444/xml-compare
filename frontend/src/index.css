@@ -1,0 +1,4 @@
+/* Monaco decorations for the XML Source View (yellow = modified, outline = selected). */
+.monaco-editor .xc-line-modified { background: #ffeb99 !important; }
+.monaco-editor .xc-line-selected { box-shadow: inset 0 0 0 2px #1565c0; }
+.monaco-editor .xc-gutter-selected { background: #1565c0; width: 4px !important; margin-left: 3px; }

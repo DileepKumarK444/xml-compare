@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Legislation xmlns="http://example.org/legislation" id="act-2020-12">
+  <!-- Draft of the Data Protection Act -->
+  <Title>Data Protection Act</Title>
+  <Section id="s1" number="1">
+    <Heading>Definitions</Heading>
+    <Text>In this Act, "controller" means the person who determines the purposes of processing.</Text>
+    <Reference href="act-2018-04">Previous reference content</Reference>
+  </Section>
+  <Section id="s2" number="2" status="draft">
+    <Heading>Scope</Heading>
+    <Text>This Act applies to all processing of personal data.</Text>
+  </Section>
+  <Section id="s3" number="3">
+    <Heading>Penalties</Heading>
+    <Text>A fine not exceeding 1000 may be imposed.</Text>
+  </Section>
+</Legislation>
