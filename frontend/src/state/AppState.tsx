@@ -59,8 +59,8 @@ interface AppState {
   clearFile: (which: 'original' | 'modified') => void;
   swapFiles: () => void;
   compare: () => Promise<boolean>;
-  /** Re-run the comparison with edited Modified text. Resolves to an error message, or null on success. */
-  recompareModified: (text: string) => Promise<string | null>;
+  /** Re-run the comparison with edited text for either side. Resolves to an error message, or null on success. */
+  recompare: (texts: { original?: string; modified?: string }) => Promise<string | null>;
   history: HistoryEntry[];
   removeHistory: (id: string) => void;
   clearHistory: () => void;
@@ -192,15 +192,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     resultRef.current = result;
   }, [result]);
 
-  const recompareModified = useCallback(async (text: string) => {
+  const recompare = useCallback(async (texts: { original?: string; modified?: string }) => {
     const cur = resultRef.current;
     if (!cur) return null;
     const seq = ++seqRef.current;
     const mk = (t: string, n: string) => new File([t], n, { type: 'application/xml' });
     try {
       const res = await compareXml(
-        mk(cur.original.text, cur.original.filename),
-        mk(text, cur.modified.filename),
+        mk(texts.original ?? cur.original.text, cur.original.filename),
+        mk(texts.modified ?? cur.modified.text, cur.modified.filename),
         cur.options,
       );
       if (seq !== seqRef.current) return null; // a newer edit superseded this one
@@ -247,7 +247,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       clearFile,
       swapFiles,
       compare,
-      recompareModified,
+      recompare,
       history,
       removeHistory,
       clearHistory,
@@ -268,7 +268,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       clearFile,
       swapFiles,
       compare,
-      recompareModified,
+      recompare,
       history,
       removeHistory,
       clearHistory,

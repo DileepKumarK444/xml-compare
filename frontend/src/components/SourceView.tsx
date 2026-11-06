@@ -2,6 +2,7 @@ import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DownloadIcon from '@mui/icons-material/Download';
+import FormatAlignLeftIcon from '@mui/icons-material/FormatAlignLeft';
 import SaveIcon from '@mui/icons-material/Save';
 import SummarizeOutlinedIcon from '@mui/icons-material/SummarizeOutlined';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -11,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import '../monaco';
 import type { CompareResult, SourceDifference } from '../types';
 import { checkWellFormed, copyText, download } from '../utils/format';
+import { formatXml } from '../utils/formatXml';
 import { buildReport } from '../utils/report';
 import DiffNav from './DiffNav';
 import FileTitles from './FileTitles';
@@ -21,7 +23,7 @@ interface Props {
   selectedId: number | null;
   onSelect: (id: number) => void;
   /** Re-compare with edited Modified text; resolves to an error message or null. */
-  onEdit: (text: string) => Promise<string | null>;
+  onEdit: (texts: { original?: string; modified?: string }) => Promise<string | null>;
 }
 
 type Collection = { clear: () => void; set: (d: unknown[]) => void };
@@ -132,11 +134,40 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
         return;
       }
       setComparing(true);
-      const err = await onEditRef.current(text);
+      const err = await onEditRef.current({ modified: text });
       if (id !== runId.current) return; // superseded by a newer edit
       setComparing(false);
       setEditError(err);
     }, EDIT_DEBOUNCE_MS);
+  };
+
+  // Pretty-print one side. Modified goes through the editor (undoable, and the normal debounced
+  // re-compare picks it up); Original is read-only, so its model is replaced and re-compared here.
+  const formatSide = async (side: 'original' | 'modified') => {
+    const ed = diffRef.current;
+    if (!ed) return;
+    const pane = (side === 'original'
+      ? ed.getOriginalEditor()
+      : ed.getModifiedEditor()) as never as FormatEditor;
+    const model = pane.getModel();
+    const src = pane.getValue();
+    if (!model) return;
+    const label = side === 'original' ? 'Original' : 'Modified';
+    if (checkWellFormed(src)) return setToast(`Can't format ${label}: the XML is not well-formed`);
+    const formatted = formatXml(src);
+    if (formatted === src) return setToast(`${label} is already formatted`);
+    if (side === 'modified') {
+      pane.pushUndoStop();
+      pane.executeEdits('format-xml', [{ range: model.getFullModelRange(), text: formatted }]);
+      pane.pushUndoStop();
+    } else {
+      model.setValue(formatted);
+      setComparing(true);
+      const err = await onEditRef.current({ original: formatted, modified: liveText() });
+      setComparing(false);
+      setEditError(err);
+    }
+    setToast(`${label} formatted`);
   };
 
   const revertEdits = () =>
@@ -156,6 +187,20 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
         </Button>
         <Button size="small" startIcon={<UnfoldMoreIcon />} onClick={() => fold('expand')}>
           Expand Tags
+        </Button>
+        <Button
+          size="small"
+          startIcon={<FormatAlignLeftIcon />}
+          onClick={() => formatSide('original')}
+        >
+          Format Original
+        </Button>
+        <Button
+          size="small"
+          startIcon={<FormatAlignLeftIcon />}
+          onClick={() => formatSide('modified')}
+        >
+          Format Modified
         </Button>
         <Box sx={{ flex: 1 }} />
         {dirty && (
@@ -281,6 +326,13 @@ interface EditorLike {
 
 interface FoldableEditor {
   getAction: (id: string) => { run: () => Promise<void> } | null;
+}
+
+interface FormatEditor {
+  getValue: () => string;
+  getModel: () => { getFullModelRange: () => unknown; setValue: (v: string) => void } | null;
+  executeEdits: (source: string, edits: { range: unknown; text: string }[]) => boolean;
+  pushUndoStop: () => boolean;
 }
 
 interface ValueEditor {

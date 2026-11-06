@@ -21,7 +21,7 @@ import { useAppState } from '../state/AppState';
 import type { PanelDifference, ViewMode } from '../types';
 
 export default function ResultsPage() {
-  const { result, view, setView, selectDifference, recompareModified } = useAppState();
+  const { result, view, setView, selectDifference, recompare } = useAppState();
   const navigate = useNavigate();
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up('lg'));
@@ -136,7 +136,7 @@ export default function ResultsPage() {
                 visible={sourceVisible}
                 selectedId={view.selected.source}
                 onSelect={(id) => selectDifference(id)}
-                onEdit={recompareModified}
+                onEdit={recompare}
               />
             </Box>
             <Box sx={{ height: '100%', display: tab === 'content' ? 'block' : 'none' }}>
