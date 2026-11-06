@@ -70,7 +70,7 @@ export default function ResultsPage() {
           color="inherit"
           size="small"
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/xml-compare')}
           sx={{ border: '1px solid rgba(255,255,255,0.3)' }}
         >
           Back to Upload

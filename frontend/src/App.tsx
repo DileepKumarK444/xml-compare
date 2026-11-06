@@ -1,6 +1,7 @@
 import { CircularProgress, Box } from '@mui/material';
 import { lazy, Suspense, type ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import DashboardPage from './pages/DashboardPage';
 import UploadPage from './pages/UploadPage';
 import { useAppState } from './state/AppState';
 
@@ -8,7 +9,7 @@ const ResultsPage = lazy(() => import('./pages/ResultsPage'));
 
 function RequireResult({ children }: { children: ReactElement }) {
   const { result } = useAppState();
-  return result ? children : <Navigate to="/" replace />;
+  return result ? children : <Navigate to="/xml-compare" replace />;
 }
 
 export default function App() {
@@ -21,9 +22,10 @@ export default function App() {
       }
     >
       <Routes>
-        <Route path="/" element={<UploadPage />} />
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/xml-compare" element={<UploadPage />} />
         <Route
-          path="/results"
+          path="/xml-compare/results"
           element={
             <RequireResult>
               <ResultsPage />
