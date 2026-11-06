@@ -6,6 +6,7 @@ import { Alert, Box, Button, CircularProgress, Container, Stack, Typography } fr
 import Grid from '@mui/material/Grid';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
+import HistorySection from '../components/HistorySection';
 import OptionsPanel from '../components/OptionsPanel';
 import UploadCard from '../components/UploadCard';
 import originalSample from '../mock/original.xml?raw';
@@ -112,6 +113,16 @@ export default function UploadPage() {
             Load sample files
           </Button>
         </Stack>
+
+        <HistorySection
+          entries={s.history}
+          onRemove={s.removeHistory}
+          onClear={s.clearHistory}
+          busy={s.loading}
+          onReopen={async (id) => {
+            if (await s.reopenHistory(id)) navigate('/results');
+          }}
+        />
       </Container>
     </Box>
   );

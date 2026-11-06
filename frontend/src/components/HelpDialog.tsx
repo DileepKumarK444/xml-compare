@@ -14,7 +14,8 @@ export default function HelpDialog({ open, onClose }: { open: boolean; onClose: 
       <DialogContent dividers>
         <Typography gutterBottom>
           XML Compare runs entirely on this machine. Files are processed in memory and are never
-          stored or sent to the internet.
+          stored or sent to the internet. Only a short history (file names and counts) is kept in
+          this browser.
         </Typography>
         <Typography variant="subtitle2" sx={{ mt: 2 }}>
           XML Source View

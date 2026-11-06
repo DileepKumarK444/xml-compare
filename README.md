@@ -5,7 +5,7 @@ Local-only web app that compares two XML files in two modes:
 - **XML Source View** – line diff of the raw text (Monaco diff editor, files never reformatted).
 - **XML Content View** – structural diff (elements, attributes, text, namespaces, ordering) shown as a navigable tree.
 
-Nothing is stored: files are processed in memory, there is no database, no auth, no history.
+Nothing is stored on the server: files are processed in memory, with no database and no auth. For convenience the browser keeps a comparison history (file names, sizes, options, difference counts in localStorage, and the file contents in IndexedDB) so past comparisons can be re-opened from the upload page. It never leaves your machine; "Remove" / "Clear history" deletes it.
 Works offline once dependencies are installed.
 
 ## Run

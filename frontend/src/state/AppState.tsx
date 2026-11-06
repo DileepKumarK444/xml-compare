@@ -11,6 +11,14 @@ import {
 import { compareXml } from '../api/compare';
 import type { CompareOptions, CompareResult, DiffFilter, ViewMode } from '../types';
 import { checkWellFormed } from '../utils/format';
+import { deleteFiles, getFiles, putFiles } from '../utils/fileStore';
+import {
+  entryFromResult,
+  loadHistory,
+  saveHistory,
+  withEntry,
+  type HistoryEntry,
+} from '../utils/history';
 
 export interface SelectedFile {
   file: File;
@@ -53,6 +61,11 @@ interface AppState {
   compare: () => Promise<boolean>;
   /** Re-run the comparison with edited Modified text. Resolves to an error message, or null on success. */
   recompareModified: (text: string) => Promise<string | null>;
+  history: HistoryEntry[];
+  removeHistory: (id: string) => void;
+  clearHistory: () => void;
+  /** Load a past comparison from stored file contents. Resolves true on success. */
+  reopenHistory: (id: string) => Promise<boolean>;
   reset: () => void;
 }
 
@@ -66,6 +79,23 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setViewState] = useState<ViewState>(DEFAULT_VIEW);
+  const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
+
+  const updateHistory = useCallback((fn: (h: HistoryEntry[]) => HistoryEntry[]) => {
+    setHistory((h) => {
+      const next = fn(h);
+      saveHistory(next);
+      // Drop stored file contents for entries that fell out of the list (idempotent).
+      const keep = new Set(next.map((e) => e.id));
+      void deleteFiles(h.filter((e) => !keep.has(e.id)).map((e) => e.id));
+      return next;
+    });
+  }, []);
+  const removeHistory = useCallback(
+    (id: string) => updateHistory((h) => h.filter((e) => e.id !== id)),
+    [updateHistory],
+  );
+  const clearHistory = useCallback(() => updateHistory(() => []), [updateHistory]);
 
   const setView = useCallback(
     (patch: Partial<ViewState>) => setViewState((v) => ({ ...v, ...patch })),
@@ -109,6 +139,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const res = await compareXml(original.file, modified.file, options);
       setResult(res);
       setViewState(DEFAULT_VIEW);
+      const entry = entryFromResult(res); // built once, outside any state updater
+      updateHistory((h) => withEntry(h, entry));
+      void putFiles({
+        id: entry.id,
+        original: { name: res.original.filename, text: res.original.text },
+        modified: { name: res.modified.filename, text: res.modified.text },
+      }).then(
+        (ok) =>
+          ok &&
+          updateHistory((h) => h.map((e) => (e.id === entry.id ? { ...e, stored: true } : e))),
+      );
       return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Comparison failed.');
@@ -116,7 +157,34 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [original, modified, options]);
+  }, [original, modified, options, updateHistory]);
+
+  const reopenHistory = useCallback(
+    async (id: string) => {
+      setError(null);
+      const entry = history.find((e) => e.id === id);
+      const files = await getFiles(id);
+      if (!entry || !files) {
+        setError('The saved files for this comparison are no longer available in this browser.');
+        return false;
+      }
+      setLoading(true);
+      try {
+        const mk = (f: { name: string; text: string }) =>
+          new File([f.text], f.name, { type: 'application/xml' });
+        const res = await compareXml(mk(files.original), mk(files.modified), entry.options);
+        setResult(res);
+        setViewState(DEFAULT_VIEW);
+        return true;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Comparison failed.');
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [history],
+  );
 
   const resultRef = useRef<CompareResult | null>(null);
   const seqRef = useRef(0);
@@ -180,6 +248,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       swapFiles,
       compare,
       recompareModified,
+      history,
+      removeHistory,
+      clearHistory,
+      reopenHistory,
       reset,
     }),
     [
@@ -197,6 +269,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       swapFiles,
       compare,
       recompareModified,
+      history,
+      removeHistory,
+      clearHistory,
+      reopenHistory,
       reset,
     ],
   );
