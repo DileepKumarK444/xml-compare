@@ -10,12 +10,12 @@ Works offline once dependencies are installed.
 
 ## Run
 
-Backend (http://localhost:8000):
+Backend (http://localhost:8010):
 
 ```bash
 cd backend
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python manage.py runserver 8000
+.venv/bin/python manage.py runserver 8010
 ```
 
 Frontend (http://localhost:5173 opens the dashboard; the XML Compare tile goes to /xml-compare):

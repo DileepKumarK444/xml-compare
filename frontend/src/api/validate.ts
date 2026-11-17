@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { ValidationResult } from '../types';
 
-const http = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000' });
+const http = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8010' });
 
 export async function validateXml(xml: File, schema?: File | null): Promise<ValidationResult> {
   const form = new FormData();
@@ -13,7 +13,7 @@ export async function validateXml(xml: File, schema?: File | null): Promise<Vali
     if (axios.isAxiosError(e)) {
       if (!e.response) {
         throw new Error(
-          'Cannot reach the backend at http://localhost:8000. Is the Django server running?',
+          'Cannot reach the backend at http://localhost:8010. Is the Django server running?',
           { cause: e },
         );
       }

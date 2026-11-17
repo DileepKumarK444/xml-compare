@@ -3,7 +3,7 @@ import type { AnyResult, CompareOptions } from '../types';
 import sampleResult from '../mock/sampleResult.json';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
-const http = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000' });
+const http = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8010' });
 
 export async function compareFiles(
   format: string,
@@ -30,7 +30,7 @@ export async function compareFiles(
     if (axios.isAxiosError(e)) {
       if (!e.response) {
         throw new Error(
-          'Cannot reach the backend at http://localhost:8000. Is the Django server running?',
+          'Cannot reach the backend at http://localhost:8010. Is the Django server running?',
           { cause: e },
         );
       }
