@@ -35,7 +35,8 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = MAX_XML_BYTES
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_XML_BYTES
 FILE_UPLOAD_HANDLERS = ["django.core.files.uploadhandler.MemoryFileUploadHandler"]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+# Any localhost port, so the frontend works even if Vite picks another one.
+CORS_ALLOWED_ORIGIN_REGEXES = [r"^http://(localhost|127\.0\.0\.1)(:\d+)?$"]
 
 REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],

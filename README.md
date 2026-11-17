@@ -8,23 +8,29 @@ Local-only web app with a dashboard of tools: **XML Compare**, **JSON Compare**,
 Nothing is stored on the server: files are processed in memory, with no database and no auth. For convenience the browser keeps a comparison history (file names, sizes, options, difference counts in localStorage, and the file contents in IndexedDB) so past comparisons can be re-opened from the upload page. It never leaves your machine; "Remove" / "Clear history" deletes it.
 Works offline once dependencies are installed.
 
-## Run
+## Run (Windows, macOS, Linux, WSL)
 
-Backend (http://localhost:8010):
-
-```bash
-cd backend
-python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python manage.py runserver 8010
-```
-
-Frontend (http://localhost:5173 opens the dashboard; the XML Compare tile goes to /xml-compare):
+Needs Node 20.19+ and Python 3.10+. One command from the repo root:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+node run.mjs      # or: npm start
 ```
+
+It creates the Python venv and installs `node_modules` for **your** system when they are missing or were
+made on another OS (a common cause of "Cannot find native binding" errors in WSL), then starts the backend
+(http://localhost:8010) and the frontend (http://localhost:5173, opens the dashboard). Ctrl+C stops both.
+Change ports with `BACKEND_PORT=8011 FRONTEND_PORT=5180 node run.mjs`
+(PowerShell: `$env:BACKEND_PORT=8011; node run.mjs`).
+
+Don't share `node_modules` or `.venv` between Windows/macOS and WSL; each system sets up its own.
+
+Manual start (equivalent):
+
+```bash
+cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt && .venv/bin/python manage.py runserver 8010
+cd frontend && npm install && npm run dev
+```
+(Windows venv path: `.venv\Scripts\python`.)
 
 Checks: `cd backend && .venv/bin/pytest` and `cd frontend && npm run lint && npm run build`.
 
