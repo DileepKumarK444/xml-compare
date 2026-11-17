@@ -1,0 +1,13 @@
+Release notes - Acme Shop
+
+Version 1.1
+- Added product catalog
+- Added shopping cart and checkout
+- Fixed login timeout
+- Faster search on large catalogs
+
+Known issues
+- Wishlist is not available yet
+
+Support: support@acme.example
+Phone: +1 555 0100

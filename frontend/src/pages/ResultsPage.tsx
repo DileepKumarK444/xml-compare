@@ -14,15 +14,25 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
 import ContentView from '../components/ContentView';
+import JsonContentView from '../components/JsonContentView';
+import { useFormat } from '../formats';
 import DifferencesPanel from '../components/DifferencesPanel';
 import SourceView from '../components/SourceView';
 import SummaryCards from '../components/SummaryCards';
 import { useAppState } from '../state/AppState';
-import type { PanelDifference, ViewMode } from '../types';
+import type {
+  CompareResult,
+  ContentDifference,
+  JsonCompareResult,
+  JsonDifference,
+  PanelDifference,
+  ViewMode,
+} from '../types';
 
 export default function ResultsPage() {
   const { result, view, setView, selectDifference, recompare } = useAppState();
   const navigate = useNavigate();
+  const cfg = useFormat();
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up('lg'));
   const [panelOverride, setPanelOverride] = useState<boolean | null>(null);
@@ -37,12 +47,12 @@ export default function ResultsPage() {
     [result, filter],
   );
   const contentVisible = useMemo(
-    () => (result?.content.differences ?? []).filter((d) => filter === 'all' || d.type === filter),
+    () => (result?.content?.differences ?? []).filter((d) => filter === 'all' || d.type === filter),
     [result, filter],
   );
   if (!result) return null;
 
-  const mode = tab === 'source' ? result.source : result.content;
+  const mode = tab === 'content' && result.content ? result.content : result.source;
   const total = mode.differences.length;
   const panelItems: PanelDifference[] = (tab === 'source' ? sourceVisible : contentVisible).map(
     (d) => ({
@@ -70,7 +80,7 @@ export default function ResultsPage() {
           color="inherit"
           size="small"
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/xml-compare')}
+          onClick={() => navigate(cfg.base)}
           sx={{ border: '1px solid rgba(255,255,255,0.3)' }}
         >
           Back to Upload
@@ -94,7 +104,7 @@ export default function ResultsPage() {
       >
         <SummaryCards
           summary={mode.summary}
-          unit={tab === 'source' ? 'lines' : 'elements'}
+          unit={tab === 'source' ? 'lines' : cfg.contentUnit}
           filter={filter}
           onFilter={(f) => setView({ filter: f })}
         />
@@ -103,8 +113,8 @@ export default function ResultsPage() {
           sx={{ display: 'flex', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}
         >
           <Tabs value={tab} onChange={(_, v: ViewMode) => setView({ tab: v })} sx={{ flex: 1 }}>
-            <Tab value="source" label="XML Source View" />
-            <Tab value="content" label="XML Content View" />
+            <Tab value="source" label={`${cfg.name} Source View`} />
+            {cfg.hasContent && <Tab value="content" label={`${cfg.name} Content View`} />}
           </Tabs>
           {!wide && (
             <Button
@@ -139,15 +149,27 @@ export default function ResultsPage() {
                 onEdit={recompare}
               />
             </Box>
-            <Box sx={{ height: '100%', display: tab === 'content' ? 'block' : 'none' }}>
-              <ContentView
-                result={result}
-                visible={contentVisible}
-                filter={filter}
-                selectedId={view.selected.content}
-                onSelect={(id) => selectDifference(id)}
-              />
-            </Box>
+            {cfg.hasContent && (
+              <Box sx={{ height: '100%', display: tab === 'content' ? 'block' : 'none' }}>
+                {cfg.id === 'json' ? (
+                  <JsonContentView
+                    result={result as JsonCompareResult}
+                    visible={contentVisible as JsonDifference[]}
+                    filter={filter}
+                    selectedId={view.selected.content}
+                    onSelect={(id) => selectDifference(id)}
+                  />
+                ) : (
+                  <ContentView
+                    result={result as CompareResult}
+                    visible={contentVisible as ContentDifference[]}
+                    filter={filter}
+                    selectedId={view.selected.content}
+                    onSelect={(id) => selectDifference(id)}
+                  />
+                )}
+              </Box>
+            )}
           </Box>
           <Collapse
             in={panelOpen}

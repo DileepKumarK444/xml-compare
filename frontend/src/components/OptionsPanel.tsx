@@ -8,25 +8,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useFormat } from '../formats';
 import type { CompareOptions } from '../types';
-
-const ITEMS: { key: keyof CompareOptions; label: string; tip: string }[] = [
-  {
-    key: 'ignore_whitespace',
-    label: 'Ignore insignificant whitespace',
-    tip: 'Ignores indentation, line breaks and repeated spaces that only affect formatting. Whitespace inside text content is still compared as a single space.',
-  },
-  {
-    key: 'ignore_comments',
-    label: 'Ignore XML comment differences',
-    tip: 'Skips <!-- comments --> in both views so that changes to comments are not reported.',
-  },
-  {
-    key: 'ignore_order',
-    label: 'Ignore element ordering',
-    tip: 'Element order is significant by default. Enable this only if sibling elements may appear in any order.',
-  },
-];
 
 export default function OptionsPanel({
   value,
@@ -35,6 +18,7 @@ export default function OptionsPanel({
   value: CompareOptions;
   onChange: (o: CompareOptions) => void;
 }) {
+  const { options: items } = useFormat();
   return (
     <Card>
       <CardContent>
@@ -42,7 +26,7 @@ export default function OptionsPanel({
           Comparison Options
         </Typography>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 0, md: 4 }}>
-          {ITEMS.map((it) => (
+          {items.map((it) => (
             <Stack key={it.key} direction="row" sx={{ alignItems: 'center' }}>
               <FormControlLabel
                 control={

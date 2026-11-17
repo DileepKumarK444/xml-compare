@@ -11,10 +11,14 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AppStateProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+      <AppStateProvider format="xml">
+        <AppStateProvider format="json">
+          <AppStateProvider format="text">
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </AppStateProvider>
+        </AppStateProvider>
       </AppStateProvider>
     </ThemeProvider>
   </StrictMode>,

@@ -11,17 +11,15 @@ from dataclasses import dataclass, field
 
 from lxml import etree
 
+from .errors import ParseError
 from .options import CompareOptions
 
 ID_ATTRIBUTES = ("id", "xml:id", "name", "key", "uuid", "ref", "code")
 _WS = re.compile(r"\s+")
 
 
-class XMLParseError(Exception):
-    def __init__(self, message: str, line: int | None = None):
-        super().__init__(message)
-        self.message = message
-        self.line = line
+class XMLParseError(ParseError):
+    pass
 
 
 @dataclass

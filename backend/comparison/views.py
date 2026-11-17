@@ -3,9 +3,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .registry import SERVICES
-from .serializers import CompareRequestSerializer
+from .serializers import CompareRequestSerializer, ValidateRequestSerializer
 from .services.options import CompareOptions
-from .services.parser import XMLParseError
+from .services.errors import ParseError
+from .services.xml_validator import XMLValidator
 
 
 class HealthView(APIView):
@@ -30,6 +31,26 @@ class CompareView(APIView):
                 d["original_file"].read(), d["modified_file"].read(), options,
                 original_name=d["original_file"].name, modified_name=d["modified_file"].name,
             )
-        except XMLParseError as exc:
+        except ParseError as exc:
+            return Response({"error": exc.message, "line": exc.line}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result)
+
+
+class ValidateView(APIView):
+    """POST /api/validate/xml/ — well-formedness plus optional XSD validation, in memory only."""
+
+    def post(self, request, fmt: str = "xml"):
+        if fmt != "xml":
+            return Response({"error": f"Unsupported format '{fmt}'."}, status=status.HTTP_404_NOT_FOUND)
+        ser = ValidateRequestSerializer(data=request.data)
+        ser.is_valid(raise_exception=True)
+        d = ser.validated_data
+        schema = d.get("schema_file")
+        try:
+            result = XMLValidator().validate(
+                d["xml_file"].read(), schema.read() if schema else None,
+                xml_name=d["xml_file"].name, schema_name=schema.name if schema else "schema.xsd",
+            )
+        except ParseError as exc:
             return Response({"error": exc.message, "line": exc.line}, status=status.HTTP_400_BAD_REQUEST)
         return Response(result)

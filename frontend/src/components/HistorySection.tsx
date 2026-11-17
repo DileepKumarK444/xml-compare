@@ -12,6 +12,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useFormat } from '../formats';
 import { formatBytes } from '../utils/format';
 import type { HistoryEntry } from '../utils/history';
 
@@ -56,6 +57,7 @@ function Counts({ label, s }: { label: string; s: HistoryEntry['source'] }) {
 }
 
 export default function HistorySection({ entries, onRemove, onClear, onReopen, busy }: Props) {
+  const cfg = useFormat();
   return (
     <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
       <Stack direction="row" sx={{ alignItems: 'center', mb: 1 }}>
@@ -100,7 +102,7 @@ export default function HistorySection({ entries, onRemove, onClear, onReopen, b
               </Typography>
               <Box sx={{ my: 0.75 }}>
                 <Counts label="Source" s={e.source} />
-                <Counts label="Content" s={e.content} />
+                {cfg.hasContent && <Counts label="Content" s={e.content} />}
               </Box>
               <Stack direction="row" sx={{ alignItems: 'center' }}>
                 <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>

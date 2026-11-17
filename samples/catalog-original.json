@@ -1,0 +1,50 @@
+{
+  "store": "Acme Shop",
+  "version": "1.0",
+  "updated": "2026-01-15",
+  "settings": {
+    "currency": "USD",
+    "taxRate": 0.08,
+    "features": {
+      "reviews": true,
+      "wishlist": false
+    }
+  },
+  "products": [
+    {
+      "id": "p100",
+      "name": "UltraBook 13",
+      "price": 999.0,
+      "stock": 42,
+      "tags": [
+        "portable",
+        "business"
+      ]
+    },
+    {
+      "id": "p200",
+      "name": "Phone X",
+      "price": 699.0,
+      "stock": 120,
+      "tags": [
+        "mobile"
+      ]
+    },
+    {
+      "id": "p300",
+      "name": "USB-C Cable",
+      "price": 12.5,
+      "stock": 500,
+      "tags": []
+    },
+    {
+      "id": "p400",
+      "name": "Laptop Sleeve",
+      "price": 29.0,
+      "stock": 75,
+      "tags": [
+        "accessory"
+      ]
+    }
+  ]
+}

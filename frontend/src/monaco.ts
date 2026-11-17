@@ -8,6 +8,22 @@ import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
   getWorker: () => new EditorWorker(),
 };
 
+// Lightweight JSON highlighting. Monaco's built-in JSON mode pulls in an extra worker we don't need.
+monaco.languages.register({ id: 'json' });
+monaco.languages.setMonarchTokensProvider('json', {
+  tokenizer: {
+    root: [
+      [/"(?:[^"\\]|\\.)*"(?=\s*:)/, 'type.identifier'],
+      [/"(?:[^"\\]|\\.)*"/, 'string'],
+      [/-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/, 'number'],
+      [/\b(?:true|false)\b/, 'keyword'],
+      [/\bnull\b/, 'comment'],
+      [/[{}[\]]/, 'delimiter.bracket'],
+      [/[,:]/, 'delimiter'],
+    ],
+  },
+});
+
 monaco.editor.defineTheme('xml-compare', {
   base: 'vs',
   inherit: true,

@@ -1,0 +1,52 @@
+{
+  "store": "Acme Shop",
+  "version": "1.1",
+  "updated": "2026-02-15",
+  "settings": {
+    "currency": "EUR",
+    "taxRate": 0.08,
+    "features": {
+      "reviews": true,
+      "wishlist": true,
+      "compare": true
+    }
+  },
+  "products": [
+    {
+      "id": "p100",
+      "name": "UltraBook 13 Pro",
+      "price": 1099.0,
+      "stock": 42,
+      "tags": [
+        "portable",
+        "business",
+        "new"
+      ]
+    },
+    {
+      "id": "p300",
+      "name": "USB-C Cable",
+      "price": 12.5,
+      "stock": 350,
+      "tags": []
+    },
+    {
+      "id": "p200",
+      "name": "Phone X",
+      "price": "649.00",
+      "stock": 120,
+      "tags": [
+        "mobile"
+      ]
+    },
+    {
+      "id": "p500",
+      "name": "Wireless Earbuds",
+      "price": 89.0,
+      "stock": 200,
+      "tags": [
+        "audio"
+      ]
+    }
+  ]
+}

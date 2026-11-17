@@ -5,6 +5,7 @@ import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutl
 import { Box, Button, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
 import { useRef, useState, type DragEvent } from 'react';
 import type { SelectedFile } from '../state/AppState';
+import { useFormat } from '../formats';
 import { formatBytes } from '../utils/format';
 
 interface Props {
@@ -13,11 +14,15 @@ interface Props {
   value: SelectedFile | null;
   onFile: (file: File) => void;
   onRemove: () => void;
+  /** Override the page's format, e.g. an optional XSD card on the XML Validator. */
+  kind?: { name: string; accept: string; extLabel: string };
 }
 
-export default function UploadCard({ title, description, value, onFile, onRemove }: Props) {
+export default function UploadCard({ title, description, value, onFile, onRemove, kind }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
+  const fmt = useFormat();
+  const cfg = kind ?? { name: fmt.name, accept: fmt.accept, extLabel: fmt.extLabel };
   const id = title.replace(/\s+/g, '-').toLowerCase();
 
   const onDrop = (e: DragEvent) => {
@@ -79,14 +84,19 @@ export default function UploadCard({ title, description, value, onFile, onRemove
                 {formatBytes(value.file.size)}
               </Typography>
               {value.error ? (
-                <Chip size="small" color="error" icon={<ErrorIcon />} label="Invalid XML" />
+                <Chip
+                  size="small"
+                  color="error"
+                  icon={<ErrorIcon />}
+                  label={`Invalid ${cfg.name}`}
+                />
               ) : (
                 <Chip
                   size="small"
                   color="success"
                   variant="outlined"
                   icon={<CheckCircleIcon />}
-                  label="Valid XML"
+                  label={`Valid ${cfg.name}`}
                 />
               )}
               {value.error && (
@@ -110,7 +120,9 @@ export default function UploadCard({ title, description, value, onFile, onRemove
           ) : (
             <>
               <CloudUploadOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />
-              <Typography>Drag &amp; drop an XML file here</Typography>
+              <Typography>
+                Drag &amp; drop {cfg.name === 'XML' ? 'an' : 'a'} {cfg.name} file here
+              </Typography>
               <Typography variant="caption" color="text.secondary">
                 or
               </Typography>
@@ -118,14 +130,14 @@ export default function UploadCard({ title, description, value, onFile, onRemove
                 Browse File
               </Button>
               <Typography variant="caption" color="text.secondary">
-                Accepted format: .xml
+                Accepted format: {cfg.extLabel}
               </Typography>
             </>
           )}
           <input
             ref={input}
             type="file"
-            accept=".xml,application/xml,text/xml"
+            accept={cfg.accept || undefined}
             hidden
             aria-label={`${title} file`}
             onChange={(e) => {

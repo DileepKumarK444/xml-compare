@@ -12,6 +12,7 @@ import {
 import { useEffect, useRef } from 'react';
 import { statusColors } from '../theme';
 import type { DiffFilter, PanelDifference } from '../types';
+import { revealInContainer } from '../utils/scroll';
 
 interface Props {
   differences: PanelDifference[]; // already filtered
@@ -34,7 +35,7 @@ export default function DifferencesPanel({
 }: Props) {
   const selectedRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    selectedRef.current?.scrollIntoView({ block: 'nearest' });
+    revealInContainer(selectedRef.current);
   }, [selectedId]);
 
   return (

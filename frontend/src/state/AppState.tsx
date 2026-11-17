@@ -6,11 +6,12 @@ import {
   useMemo,
   useRef,
   useState,
+  type Context,
   type ReactNode,
 } from 'react';
-import { compareXml } from '../api/compare';
-import type { CompareOptions, CompareResult, DiffFilter, ViewMode } from '../types';
-import { checkWellFormed } from '../utils/format';
+import { compareFiles } from '../api/compare';
+import { accepts, FORMATS, FormatCtx, type Format } from '../formats';
+import type { AnyResult, CompareOptions, DiffFilter, ViewMode } from '../types';
 import { deleteFiles, getFiles, putFiles } from '../utils/fileStore';
 import {
   entryFromResult,
@@ -23,7 +24,7 @@ import {
 export interface SelectedFile {
   file: File;
   text: string;
-  error: string | null; // null => valid XML
+  error: string | null; // null => valid
 }
 
 export interface ViewState {
@@ -48,7 +49,7 @@ interface AppState {
   original: SelectedFile | null;
   modified: SelectedFile | null;
   options: CompareOptions;
-  result: CompareResult | null;
+  result: AnyResult | null;
   loading: boolean;
   error: string | null;
   view: ViewState;
@@ -69,28 +70,38 @@ interface AppState {
   reset: () => void;
 }
 
-const Ctx = createContext<AppState | null>(null);
+// One store per comparison tool, so XML and JSON keep separate files, results and history.
+const Ctxs: Record<Format, Context<AppState | null>> = {
+  xml: createContext<AppState | null>(null),
+  json: createContext<AppState | null>(null),
+  text: createContext<AppState | null>(null),
+};
 
-export function AppStateProvider({ children }: { children: ReactNode }) {
+export function AppStateProvider({ format, children }: { format: Format; children: ReactNode }) {
+  const cfg = FORMATS[format];
+  const Ctx = Ctxs[format];
   const [original, setOriginal] = useState<SelectedFile | null>(null);
   const [modified, setModified] = useState<SelectedFile | null>(null);
   const [options, setOptions] = useState<CompareOptions>(DEFAULT_OPTIONS);
-  const [result, setResult] = useState<CompareResult | null>(null);
+  const [result, setResult] = useState<AnyResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [view, setViewState] = useState<ViewState>(DEFAULT_VIEW);
-  const [history, setHistory] = useState<HistoryEntry[]>(loadHistory);
+  const [history, setHistory] = useState<HistoryEntry[]>(() => loadHistory(cfg.historyKey));
 
-  const updateHistory = useCallback((fn: (h: HistoryEntry[]) => HistoryEntry[]) => {
-    setHistory((h) => {
-      const next = fn(h);
-      saveHistory(next);
-      // Drop stored file contents for entries that fell out of the list (idempotent).
-      const keep = new Set(next.map((e) => e.id));
-      void deleteFiles(h.filter((e) => !keep.has(e.id)).map((e) => e.id));
-      return next;
-    });
-  }, []);
+  const updateHistory = useCallback(
+    (fn: (h: HistoryEntry[]) => HistoryEntry[]) => {
+      setHistory((h) => {
+        const next = fn(h);
+        saveHistory(cfg.historyKey, next);
+        // Drop stored file contents for entries that fell out of the list (idempotent).
+        const keep = new Set(next.map((e) => e.id));
+        void deleteFiles(h.filter((e) => !keep.has(e.id)).map((e) => e.id));
+        return next;
+      });
+    },
+    [cfg.historyKey],
+  );
   const removeHistory = useCallback(
     (id: string) => updateHistory((h) => h.filter((e) => e.id !== id)),
     [updateHistory],
@@ -107,19 +118,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const loadFile = useCallback(async (which: 'original' | 'modified', file: File) => {
-    let problem: string | null;
-    let text = '';
-    if (!file.name.toLowerCase().endsWith('.xml')) problem = 'Only .xml files are accepted.';
-    else if (file.size === 0) problem = 'File is empty.';
-    else if (file.size > MAX_BYTES) problem = 'File is larger than 20 MB.';
-    else {
-      text = await file.text();
-      problem = checkWellFormed(text);
-    }
-    (which === 'original' ? setOriginal : setModified)({ file, text, error: problem });
-    setError(null);
-  }, []);
+  const loadFile = useCallback(
+    async (which: 'original' | 'modified', file: File) => {
+      let problem: string | null;
+      let text = '';
+      if (!accepts(cfg, file.name)) problem = `Only ${cfg.extLabel} files are accepted.`;
+      else if (file.size === 0) problem = 'File is empty.';
+      else if (file.size > MAX_BYTES) problem = 'File is larger than 20 MB.';
+      else {
+        text = await file.text();
+        problem = cfg.validate(text);
+      }
+      (which === 'original' ? setOriginal : setModified)({ file, text, error: problem });
+      setError(null);
+    },
+    [cfg],
+  );
 
   const clearFile = useCallback((which: 'original' | 'modified') => {
     (which === 'original' ? setOriginal : setModified)(null);
@@ -136,7 +150,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await compareXml(original.file, modified.file, options);
+      const res = await compareFiles(format, original.file, modified.file, options);
       setResult(res);
       setViewState(DEFAULT_VIEW);
       const entry = entryFromResult(res); // built once, outside any state updater
@@ -157,7 +171,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [original, modified, options, updateHistory]);
+  }, [original, modified, options, updateHistory, format]);
 
   const reopenHistory = useCallback(
     async (id: string) => {
@@ -172,7 +186,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       try {
         const mk = (f: { name: string; text: string }) =>
           new File([f.text], f.name, { type: 'application/xml' });
-        const res = await compareXml(mk(files.original), mk(files.modified), entry.options);
+        const res = await compareFiles(
+          format,
+          mk(files.original),
+          mk(files.modified),
+          entry.options,
+        );
         setResult(res);
         setViewState(DEFAULT_VIEW);
         return true;
@@ -183,44 +202,48 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     },
-    [history],
+    [history, format],
   );
 
-  const resultRef = useRef<CompareResult | null>(null);
+  const resultRef = useRef<AnyResult | null>(null);
   const seqRef = useRef(0);
   useEffect(() => {
     resultRef.current = result;
   }, [result]);
 
-  const recompare = useCallback(async (texts: { original?: string; modified?: string }) => {
-    const cur = resultRef.current;
-    if (!cur) return null;
-    const seq = ++seqRef.current;
-    const mk = (t: string, n: string) => new File([t], n, { type: 'application/xml' });
-    try {
-      const res = await compareXml(
-        mk(texts.original ?? cur.original.text, cur.original.filename),
-        mk(texts.modified ?? cur.modified.text, cur.modified.filename),
-        cur.options,
-      );
-      if (seq !== seqRef.current) return null; // a newer edit superseded this one
-      setResult(res);
-      setViewState((v) => ({
-        ...v,
-        selected: {
-          source: res.source.differences.some((d) => d.id === v.selected.source)
-            ? v.selected.source
-            : null,
-          content: res.content.differences.some((d) => d.id === v.selected.content)
-            ? v.selected.content
-            : null,
-        },
-      }));
-      return null;
-    } catch (e) {
-      return seq === seqRef.current && e instanceof Error ? e.message : null;
-    }
-  }, []);
+  const recompare = useCallback(
+    async (texts: { original?: string; modified?: string }) => {
+      const cur = resultRef.current;
+      if (!cur) return null;
+      const seq = ++seqRef.current;
+      const mk = (t: string, n: string) => new File([t], n, { type: 'application/xml' });
+      try {
+        const res = await compareFiles(
+          format,
+          mk(texts.original ?? cur.original.text, cur.original.filename),
+          mk(texts.modified ?? cur.modified.text, cur.modified.filename),
+          cur.options,
+        );
+        if (seq !== seqRef.current) return null; // a newer edit superseded this one
+        setResult(res);
+        setViewState((v) => ({
+          ...v,
+          selected: {
+            source: res.source.differences.some((d) => d.id === v.selected.source)
+              ? v.selected.source
+              : null,
+            content: res.content?.differences.some((d) => d.id === v.selected.content)
+              ? v.selected.content
+              : null,
+          },
+        }));
+        return null;
+      } catch (e) {
+        return seq === seqRef.current && e instanceof Error ? e.message : null;
+      }
+    },
+    [format],
+  );
 
   const reset = useCallback(() => {
     setOriginal(null);
@@ -279,8 +302,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+/** The store for the tool the current route belongs to. */
 export function useAppState(): AppState {
-  const v = useContext(Ctx);
+  const fmt = useContext(FormatCtx);
+  return useAppStateFor(fmt);
+}
+
+/** A specific tool's store, e.g. for the dashboard's history counts. */
+export function useAppStateFor(fmt: Format): AppState {
+  const v = useContext(Ctxs[fmt]);
   if (!v) throw new Error('useAppState must be used inside AppStateProvider');
   return v;
 }

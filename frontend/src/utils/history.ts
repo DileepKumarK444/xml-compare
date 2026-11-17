@@ -1,4 +1,4 @@
-import type { CompareOptions, CompareResult, Summary } from '../types';
+import type { AnyResult, CompareOptions, Summary } from '../types';
 
 /** One past comparison. Only names and counts are kept — never file contents. */
 export interface HistoryEntry {
@@ -13,12 +13,11 @@ export interface HistoryEntry {
   stored?: boolean;
 }
 
-const KEY = 'xml-compare-history';
 const MAX_ENTRIES = 100;
 
-export function loadHistory(): HistoryEntry[] {
+export function loadHistory(key: string): HistoryEntry[] {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(key);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? (parsed as HistoryEntry[]) : [];
   } catch {
@@ -26,15 +25,15 @@ export function loadHistory(): HistoryEntry[] {
   }
 }
 
-export function saveHistory(entries: HistoryEntry[]): void {
+export function saveHistory(key: string, entries: HistoryEntry[]): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(entries));
+    localStorage.setItem(key, JSON.stringify(entries));
   } catch {
     /* storage blocked or full — history is a convenience, so ignore */
   }
 }
 
-export function entryFromResult(r: CompareResult): HistoryEntry {
+export function entryFromResult(r: AnyResult): HistoryEntry {
   return {
     id: crypto.randomUUID(),
     at: new Date().toISOString(),
@@ -42,7 +41,7 @@ export function entryFromResult(r: CompareResult): HistoryEntry {
     modified: { name: r.modified.filename, size: r.modified.size },
     options: r.options,
     source: r.source.summary,
-    content: r.content.summary,
+    content: r.content?.summary ?? r.source.summary,
   };
 }
 

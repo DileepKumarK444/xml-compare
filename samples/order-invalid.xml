@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+  <qty>two</qty>
+  <sku>A-1</sku>
+  <note>Missing close tag
+</order>

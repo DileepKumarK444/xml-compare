@@ -6,16 +6,20 @@ import { AppBar, Box, Chip, IconButton, Toolbar, Tooltip, Typography } from '@mu
 import { useState, type ReactNode } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { headerBg } from '../theme';
-import HelpDialog from './HelpDialog';
+import { useFormat } from '../formats';
+import HelpDialog, { type About } from './HelpDialog';
 
 interface Props {
   children?: ReactNode;
   title?: string;
   /** Show the link back to the dashboard (hidden on the dashboard itself). */
   showHome?: boolean;
+  /** Replaces the format-based help text, for pages that aren't a comparison. */
+  about?: About;
 }
 
-export default function AppHeader({ children, title = 'XML Compare', showHome = true }: Props) {
+export default function AppHeader({ children, title, showHome = true, about }: Props) {
+  const cfg = useFormat();
   const [help, setHelp] = useState(false);
   return (
     <>
@@ -46,7 +50,7 @@ export default function AppHeader({ children, title = 'XML Compare', showHome = 
               <CodeIcon fontSize="small" />
             </Box>
             <Typography variant="h6" component="h1" sx={{ fontSize: 18 }}>
-              {title}
+              {title ?? cfg.tool}
             </Typography>
           </Box>
           {showHome && (
@@ -69,14 +73,14 @@ export default function AppHeader({ children, title = 'XML Compare', showHome = 
               border: '1px solid rgba(255,255,255,0.25)',
             }}
           />
-          <Tooltip title="About XML Compare">
+          <Tooltip title={`About ${about ? about.title.replace('About ', '') : cfg.tool}`}>
             <IconButton color="inherit" aria-label="Help" onClick={() => setHelp(true)}>
               <InfoOutlinedIcon />
             </IconButton>
           </Tooltip>
         </Toolbar>
       </AppBar>
-      <HelpDialog open={help} onClose={() => setHelp(false)} />
+      <HelpDialog open={help} onClose={() => setHelp(false)} about={about} />
     </>
   );
 }

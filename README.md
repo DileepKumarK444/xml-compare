@@ -1,9 +1,9 @@
 # XML Compare
 
-Local-only web app that compares two XML files in two modes:
+Local-only web app with a dashboard of tools: **XML Compare**, **JSON Compare**, **Text Compare** and **XML Validator**. XML and JSON compare each work in two modes (Text Compare has the Source view only):
 
-- **XML Source View** – line diff of the raw text (Monaco diff editor, files never reformatted).
-- **XML Content View** – structural diff (elements, attributes, text, namespaces, ordering) shown as a navigable tree.
+- **Source View** – line diff of the raw text (Monaco diff editor, files never reformatted).
+- **Content View** – structural diff shown as a navigable tree. XML: elements, attributes, text, namespaces, ordering. JSON: properties, array items (matched by `id`/`name`/`key`/… when present), value types and values; property order is ignored.
 
 Nothing is stored on the server: files are processed in memory, with no database and no auth. For convenience the browser keeps a comparison history (file names, sizes, options, difference counts in localStorage, and the file contents in IndexedDB) so past comparisons can be re-opened from the upload page. It never leaves your machine; "Remove" / "Clear history" deletes it.
 Works offline once dependencies are installed.
@@ -33,10 +33,14 @@ and use **Load sample files** on the upload screen.
 
 ## API
 
-`POST /api/compare/xml/` (multipart): `original_file`, `modified_file`, optional booleans
+`POST /api/compare/<format>/` with format `xml`, `json` or `text` (multipart): `original_file`, `modified_file`, optional booleans
 `ignore_whitespace` (default true), `ignore_comments` (false), `ignore_order` (false).
 Returns `{options, original, modified, source:{summary,differences}, content:{summary,differences,tree}}`.
-Invalid XML -> `400 {"error": "...", "line": n}`. `GET /api/health/` lists supported formats.
+Invalid input -> `400 {"error": "...", "line": n}`. `GET /api/health/` lists supported formats.
+
+`POST /api/validate/xml/` (multipart): `xml_file`, optional `schema_file` (a single self-contained XSD).
+Returns `{well_formed, valid, schema, summary, errors:[{id, kind: syntax|schema, line, column, message}], stats, text}`.
+A schema that is not a valid XSD, or that includes/imports other files -> `400 {"error": "..."}`.
 
 ## Architecture
 
@@ -48,6 +52,10 @@ backend/comparison/services/
                  similarity (attrs/text/children) -> single-candidate pairing; LIS for order changes;
                  added/removed subtrees reported once at their root
   service.py     XMLComparisonService orchestrates both (no Django imports)
+  text_service.py   TextComparisonService: line diff only (content is null)
+  xml_validator.py  XMLValidator: well-formedness + XSD, every error with line/column
+  json_parser.py / json_structural.py / json_service.py   the same pipeline for JSON
+                 (`ignore_order` = array order; `ignore_comments` does not apply)
 backend/comparison/registry.py   add new document formats here (URL: /api/compare/<format>/)
 frontend/src/    React + MUI; state in state/AppState.tsx (result survives Back to Upload)
 ```

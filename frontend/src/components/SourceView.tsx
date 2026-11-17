@@ -10,15 +10,15 @@ import { Alert, Box, Button, Chip, Paper, Snackbar, Stack } from '@mui/material'
 import { DiffEditor } from '@monaco-editor/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import '../monaco';
-import type { CompareResult, SourceDifference } from '../types';
-import { checkWellFormed, copyText, download } from '../utils/format';
-import { formatXml } from '../utils/formatXml';
+import type { AnyResult, SourceDifference } from '../types';
+import { useFormat } from '../formats';
+import { copyText, download } from '../utils/format';
 import { buildReport } from '../utils/report';
 import DiffNav from './DiffNav';
 import FileTitles from './FileTitles';
 
 interface Props {
-  result: CompareResult;
+  result: AnyResult;
   visible: SourceDifference[]; // filtered
   selectedId: number | null;
   onSelect: (id: number) => void;
@@ -29,6 +29,8 @@ interface Props {
 type Collection = { clear: () => void; set: (d: unknown[]) => void };
 
 const EDIT_DEBOUNCE_MS = 600;
+const IMMEDIATE = 1; // monaco.editor.ScrollType.Immediate — no smooth-scroll lag
+const GLYPH_MARGIN_TARGET = 2; // monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN
 
 function editedName(name: string) {
   const i = name.lastIndexOf('.');
@@ -36,10 +38,16 @@ function editedName(name: string) {
 }
 
 export default function SourceView({ result, visible, selectedId, onSelect, onEdit }: Props) {
-  const diffRef = useRef<{ getOriginalEditor: () => never; getModifiedEditor: () => never } | null>(
-    null,
-  );
+  const cfg = useFormat();
+  const diffRef = useRef<{
+    getOriginalEditor: () => never;
+    getModifiedEditor: () => never;
+    getLineChanges: () => LineChange[] | null;
+  } | null>(null);
   const decorations = useRef<Collection[]>([]);
+  const glyphs = useRef<Collection[]>([]);
+  const changes = useRef<LineChange[]>([]);
+  const [originalEdited, setOriginalEdited] = useState(false);
   const [toast, setToast] = useState('');
   // The editor owns the Modified text while editing, so this seed is captured once (not re-synced
   // from `result`, which would overwrite what the user typed while a re-compare was in flight).
@@ -78,17 +86,14 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
         const s = d[start];
         const e = d[end];
         if (s == null || e == null) continue;
-        const sel = d.id === selectedId;
-        if (d.type === 'modified' || sel) {
+        if (d.id === selectedId) {
+          // Native Monaco colours show the diff (VS Code style); we only outline the selection.
           decs.push({
             range: { startLineNumber: s, startColumn: 1, endLineNumber: e, endColumn: 1 },
             options: {
               isWholeLine: true,
-              className: [
-                d.type === 'modified' ? 'xc-line-modified' : '',
-                sel ? 'xc-line-selected' : '',
-              ].join(' '),
-              linesDecorationsClassName: sel ? 'xc-gutter-selected' : undefined,
+              className: 'xc-line-selected',
+              linesDecorationsClassName: 'xc-gutter-selected',
             },
           });
         }
@@ -98,8 +103,10 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
     });
     const sel = all.find((d) => d.id === selectedId);
     if (sel) {
-      if (sel.modified_start != null) sides[1].editor.revealLineInCenter(sel.modified_start);
-      else if (sel.original_start != null) sides[0].editor.revealLineInCenter(sel.original_start);
+      if (sel.modified_start != null)
+        sides[1].editor.revealLineInCenter(sel.modified_start, IMMEDIATE);
+      else if (sel.original_start != null)
+        sides[0].editor.revealLineInCenter(sel.original_start, IMMEDIATE);
     }
   }, [all, selectedId]);
 
@@ -107,7 +114,121 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
     apply();
   }, [apply]);
 
-  // Collapse Tags: fold the root's child elements (root stays open). Expand Tags: unfold all. Both panes.
+  // Arrow glyphs in each pane's margin, one per block Monaco's own diff reports (VS Code style).
+  // Original's arrow copies that block into Modified; Modified's arrow copies it into Original.
+  const refreshGlyphs = useCallback(() => {
+    const ed = diffRef.current;
+    if (!ed) return;
+    changes.current = ed.getLineChanges() ?? [];
+    glyphs.current.forEach((c) => c.clear());
+    const mk = (cls: string, tip: string, line: number) => ({
+      range: { startLineNumber: line, startColumn: 1, endLineNumber: line, endColumn: 1 },
+      options: { glyphMarginClassName: cls, glyphMarginHoverMessage: { value: tip } },
+    });
+    const orig = ed.getOriginalEditor() as never as EditorLike;
+    const mod = ed.getModifiedEditor() as never as EditorLike;
+    glyphs.current = [
+      orig.createDecorationsCollection(
+        changes.current
+          .filter((c) => c.originalEndLineNumber > 0)
+          .map((c) =>
+            mk('xc-glyph-to-modified', 'Copy this block to Modified', c.originalStartLineNumber),
+          ),
+      ) as Collection,
+      mod.createDecorationsCollection(
+        changes.current
+          .filter((c) => c.modifiedEndLineNumber > 0)
+          .map((c) =>
+            mk('xc-glyph-to-original', 'Copy this block to Original', c.modifiedStartLineNumber),
+          ),
+      ) as Collection,
+    ];
+  }, []);
+
+  // Copy the block under `line` in `from`'s pane into the other file.
+  const copyBlock = async (from: 'original' | 'modified', line: number) => {
+    const ed = diffRef.current;
+    if (!ed) return;
+    const c = changes.current.find((x) =>
+      from === 'original'
+        ? line >= x.originalStartLineNumber &&
+          line <= Math.max(x.originalEndLineNumber, x.originalStartLineNumber)
+        : line >= x.modifiedStartLineNumber &&
+          line <= Math.max(x.modifiedEndLineNumber, x.modifiedStartLineNumber),
+    );
+    if (!c) return;
+    const srcPane = (from === 'original'
+      ? ed.getOriginalEditor()
+      : ed.getModifiedEditor()) as never as BlockEditor;
+    const dstPane = (from === 'original'
+      ? ed.getModifiedEditor()
+      : ed.getOriginalEditor()) as never as BlockEditor;
+    const src = srcPane.getModel();
+    const dst = dstPane.getModel();
+    if (!src || !dst) return;
+    const [s1, s2, d1, d2] =
+      from === 'original'
+        ? [
+            c.originalStartLineNumber,
+            c.originalEndLineNumber,
+            c.modifiedStartLineNumber,
+            c.modifiedEndLineNumber,
+          ]
+        : [
+            c.modifiedStartLineNumber,
+            c.modifiedEndLineNumber,
+            c.originalStartLineNumber,
+            c.originalEndLineNumber,
+          ];
+    const text = src.getValueInRange({
+      startLineNumber: s1,
+      startColumn: 1,
+      endLineNumber: s2,
+      endColumn: src.getLineMaxColumn(s2),
+    });
+    const eol = dst.getEOL();
+    let edit: { range: unknown; text: string };
+    if (d2 > 0) {
+      // The other file has lines here too: replace them.
+      edit = {
+        range: {
+          startLineNumber: d1,
+          startColumn: 1,
+          endLineNumber: d2,
+          endColumn: dst.getLineMaxColumn(d2),
+        },
+        text,
+      };
+    } else if (d1 < dst.getLineCount()) {
+      // The other file has nothing here: insert as new lines after line d1.
+      edit = {
+        range: { startLineNumber: d1 + 1, startColumn: 1, endLineNumber: d1 + 1, endColumn: 1 },
+        text: text + eol,
+      };
+    } else {
+      const col = dst.getLineMaxColumn(d1); // insert after the very last line
+      edit = {
+        range: { startLineNumber: d1, startColumn: col, endLineNumber: d1, endColumn: col },
+        text: eol + text,
+      };
+    }
+    if (from === 'original') {
+      dstPane.pushUndoStop();
+      dstPane.executeEdits('copy-block', [edit]); // undoable; the normal debounced re-compare follows
+      dstPane.pushUndoStop();
+      setToast('Copied to Modified');
+    } else {
+      dst.applyEdits([edit]); // Original is read-only for typing, so edit its model and re-compare now
+      setOriginalEdited(true);
+      setComparing(true);
+      const err = await onEditRef.current({ original: dst.getValue(), modified: liveText() });
+      setComparing(false);
+      setEditError(err);
+      setToast('Copied to Original');
+    }
+  };
+
+  // Collapse {cfg.foldNoun}: fold the root's child elements (root stays open). Expand {cfg.foldNoun}: unfold all. Both panes.
   const fold = async (mode: 'collapse' | 'expand') => {
     const ed = diffRef.current;
     if (!ed) return;
@@ -127,7 +248,7 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
     clearTimeout(timer.current);
     const id = ++runId.current;
     timer.current = setTimeout(async () => {
-      const problem = checkWellFormed(text);
+      const problem = cfg.validate(text);
       if (problem) {
         setComparing(false);
         setEditError(problem);
@@ -153,12 +274,12 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
     const src = pane.getValue();
     if (!model) return;
     const label = side === 'original' ? 'Original' : 'Modified';
-    if (checkWellFormed(src)) return setToast(`Can't format ${label}: the XML is not well-formed`);
-    const formatted = formatXml(src);
+    if (cfg.validate(src)) return setToast(`Can't format ${label}: the ${cfg.name} is not valid`);
+    const formatted = cfg.pretty?.(src) ?? src;
     if (formatted === src) return setToast(`${label} is already formatted`);
     if (side === 'modified') {
       pane.pushUndoStop();
-      pane.executeEdits('format-xml', [{ range: model.getFullModelRange(), text: formatted }]);
+      pane.executeEdits('format', [{ range: model.getFullModelRange(), text: formatted }]);
       pane.pushUndoStop();
     } else {
       model.setValue(formatted);
@@ -183,26 +304,31 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
       <Stack direction="row" sx={{ flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
         <DiffNav ids={visible.map((d) => d.id)} selectedId={selectedId} onSelect={onSelect} />
         <Button size="small" startIcon={<UnfoldLessIcon />} onClick={() => fold('collapse')}>
-          Collapse Tags
+          Collapse {cfg.foldNoun}
         </Button>
         <Button size="small" startIcon={<UnfoldMoreIcon />} onClick={() => fold('expand')}>
-          Expand Tags
+          Expand {cfg.foldNoun}
         </Button>
-        <Button
-          size="small"
-          startIcon={<FormatAlignLeftIcon />}
-          onClick={() => formatSide('original')}
-        >
-          Format Original
-        </Button>
-        <Button
-          size="small"
-          startIcon={<FormatAlignLeftIcon />}
-          onClick={() => formatSide('modified')}
-        >
-          Format Modified
-        </Button>
+        {cfg.pretty && (
+          <>
+            <Button
+              size="small"
+              startIcon={<FormatAlignLeftIcon />}
+              onClick={() => formatSide('original')}
+            >
+              Format Original
+            </Button>
+            <Button
+              size="small"
+              startIcon={<FormatAlignLeftIcon />}
+              onClick={() => formatSide('modified')}
+            >
+              Format Modified
+            </Button>
+          </>
+        )}
         <Box sx={{ flex: 1 }} />
+        {originalEdited && <Chip size="small" color="info" label="Original changed" />}
         {dirty && (
           <Chip size="small" color="warning" label={comparing ? 'Edited · comparing…' : 'Edited'} />
         )}
@@ -218,48 +344,50 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
           disabled={!dirty || !!editError}
           onClick={() => download(editedName(result.modified.filename), liveText())}
         >
-          Save Edited XML
+          Save Edited {cfg.name}
         </Button>
         <Button
           size="small"
           startIcon={<ContentCopyIcon />}
-          onClick={() => say(result.original.text, 'Original XML')}
+          onClick={() => say(result.original.text, `Original ${cfg.name}`)}
         >
-          Copy Original XML
+          Copy Original {cfg.name}
         </Button>
         <Button
           size="small"
           startIcon={<ContentCopyIcon />}
-          onClick={() => say(liveText(), 'Modified XML')}
+          onClick={() => say(liveText(), `Modified ${cfg.name}`)}
         >
-          Copy Modified XML
+          Copy Modified {cfg.name}
         </Button>
         <Button
           size="small"
           startIcon={<DownloadIcon />}
           onClick={() => download(result.original.filename, result.original.text)}
         >
-          Download Original XML
+          Download Original {cfg.name}
         </Button>
         <Button
           size="small"
           startIcon={<DownloadIcon />}
           onClick={() => download(result.modified.filename, liveText())}
         >
-          Download Modified XML
+          Download Modified {cfg.name}
         </Button>
         <Button
           size="small"
           variant="outlined"
           startIcon={<SummarizeOutlinedIcon />}
-          onClick={() => download('xml-compare-report.html', buildReport(result), 'text/html')}
+          onClick={() =>
+            download(`${cfg.id}-compare-report.html`, buildReport(result, cfg), 'text/html')
+          }
         >
           Download Comparison Report
         </Button>
       </Stack>
       {editError && (
         <Alert severity="warning" sx={{ py: 0 }}>
-          Edited XML can't be compared yet:{' '}
+          Edited {cfg.name} can't be compared yet:{' '}
           {editError.length > 140 ? `${editError.slice(0, 140)}…` : editError}. Showing the last
           valid comparison.
         </Alert>
@@ -272,25 +400,42 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
         <DiffEditor
           original={result.original.text}
           modified={initialModified}
-          language="xml"
+          language={cfg.language}
           theme="xml-compare"
           onMount={(editor) => {
             diffRef.current = editor as never;
-            for (const e of [editor.getOriginalEditor(), editor.getModifiedEditor()]) {
+            const sides = [
+              ['original', editor.getOriginalEditor()],
+              ['modified', editor.getModifiedEditor()],
+            ] as const;
+            for (const [side, e] of sides) {
               e.updateOptions({
                 folding: true,
                 foldingStrategy: 'indentation',
                 showFoldingControls: 'always',
+                glyphMargin: true,
+                stickyScroll: { enabled: false },
+              });
+              e.onMouseDown((ev) => {
+                if (ev.target.type === GLYPH_MARGIN_TARGET && ev.target.position) {
+                  void copyBlock(side, ev.target.position.lineNumber);
+                }
               });
             }
             apply();
+            refreshGlyphs();
             editor.getModifiedEditor().onDidChangeModelContent(() => onModifiedChange());
-            editor.onDidUpdateDiff(() => apply());
+            editor.onDidUpdateDiff(() => {
+              apply();
+              refreshGlyphs();
+            });
           }}
           options={{
             readOnly: false, // Modified pane is editable
             originalEditable: false, // Original stays read-only
             renderMarginRevertIcon: true,
+            stickyScroll: { enabled: false }, // its overlay covers lines and skews scroll positions
+            diffAlgorithm: 'advanced',
             renderSideBySide: true,
             useInlineViewWhenSpaceIsLimited: false,
             ignoreTrimWhitespace: result.options.ignore_whitespace,
@@ -321,7 +466,27 @@ export default function SourceView({ result, visible, selectedId, onSelect, onEd
 
 interface EditorLike {
   createDecorationsCollection: (d: unknown[]) => unknown;
-  revealLineInCenter: (n: number) => void;
+  revealLineInCenter: (n: number, scrollType?: number) => void;
+}
+
+interface LineChange {
+  originalStartLineNumber: number;
+  originalEndLineNumber: number; // 0 => nothing in Original (pure insertion after the start line)
+  modifiedStartLineNumber: number;
+  modifiedEndLineNumber: number; // 0 => nothing in Modified
+}
+
+interface BlockEditor {
+  getModel: () => {
+    getValueInRange: (r: unknown) => string;
+    getLineMaxColumn: (n: number) => number;
+    getLineCount: () => number;
+    getEOL: () => string;
+    getValue: () => string;
+    applyEdits: (e: { range: unknown; text: string }[]) => unknown;
+  } | null;
+  executeEdits: (source: string, edits: { range: unknown; text: string }[]) => boolean;
+  pushUndoStop: () => boolean;
 }
 
 interface FoldableEditor {

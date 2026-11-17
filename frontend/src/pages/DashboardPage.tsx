@@ -7,7 +7,7 @@ import Grid from '@mui/material/Grid';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/AppHeader';
-import { useAppState } from '../state/AppState';
+import { useAppStateFor } from '../state/AppState';
 
 interface Tile {
   title: string;
@@ -19,7 +19,10 @@ interface Tile {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { history } = useAppState();
+  const xml = useAppStateFor('xml').history.length;
+  const json = useAppStateFor('json').history.length;
+  const text = useAppStateFor('text').history.length;
+  const badge = (n: number) => (n ? `${n} past comparison${n === 1 ? '' : 's'}` : undefined);
 
   const tiles: Tile[] = [
     {
@@ -28,24 +31,30 @@ export default function DashboardPage() {
         'Compare two XML files side by side, by source lines or by structure and content.',
       icon: <CompareArrowsIcon />,
       to: '/xml-compare',
-      badge: history.length
-        ? `${history.length} past comparison${history.length === 1 ? '' : 's'}`
-        : undefined,
+      badge: badge(xml),
     },
     {
       title: 'JSON Compare',
-      description: 'Structural comparison for JSON documents.',
+      description:
+        'Compare two JSON files by raw text or by data: properties, array items, types and values.',
       icon: <DataObjectIcon />,
+      to: '/json-compare',
+      badge: badge(json),
     },
     {
       title: 'Text Diff',
-      description: 'Line-by-line diff for any plain-text or code files.',
+      description:
+        'Line-by-line diff for any plain-text or code files, with copy-to-other-side arrows.',
       icon: <DifferenceOutlinedIcon />,
+      to: '/text-compare',
+      badge: badge(text),
     },
     {
       title: 'XML Validator',
-      description: 'Check well-formedness and validate against a schema.',
+      description:
+        'Find every syntax error with its line, optionally check an XSD schema, and fix it in place.',
       icon: <RuleIcon />,
+      to: '/xml-validator',
     },
   ];
 

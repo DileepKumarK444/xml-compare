@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog xmlns="http://example.com/catalog" version="1.0">
+  <!-- Product catalog, January release -->
+  <metadata>
+    <owner>Merchandising Team</owner>
+    <updated>2026-01-15</updated>
+  </metadata>
+  <products>
+    <product id="p100" category="laptops">
+      <name>UltraBook 13</name>
+      <price currency="USD">999.00</price>
+      <stock>42</stock>
+      <tags>
+        <tag>portable</tag>
+        <tag>business</tag>
+      </tags>
+    </product>
+    <product id="p200" category="phones">
+      <name>Phone X</name>
+      <price currency="USD">699.00</price>
+      <stock>120</stock>
+    </product>
+    <product id="p300" category="accessories">
+      <name>USB-C Cable</name>
+      <price currency="USD">12.50</price>
+      <stock>500</stock>
+    </product>
+    <product id="p400" category="accessories">
+      <name>Laptop Sleeve</name>
+      <price currency="USD">29.00</price>
+      <stock>75</stock>
+    </product>
+  </products>
+</catalog>

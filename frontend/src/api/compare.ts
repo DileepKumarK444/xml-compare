@@ -1,18 +1,19 @@
 import axios from 'axios';
-import type { CompareOptions, CompareResult } from '../types';
+import type { AnyResult, CompareOptions } from '../types';
 import sampleResult from '../mock/sampleResult.json';
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 const http = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000' });
 
-export async function compareXml(
+export async function compareFiles(
+  format: string,
   original: File,
   modified: File,
   options: CompareOptions,
-): Promise<CompareResult> {
+): Promise<AnyResult> {
   if (USE_MOCK) {
     await new Promise((r) => setTimeout(r, 600));
-    const mock = structuredClone(sampleResult) as unknown as CompareResult;
+    const mock = structuredClone(sampleResult) as unknown as AnyResult;
     mock.options = options;
     return mock;
   }
@@ -23,7 +24,7 @@ export async function compareXml(
     form.append(k, String(options[k])),
   );
   try {
-    const res = await http.post<CompareResult>('/api/compare/xml/', form);
+    const res = await http.post<AnyResult>(`/api/compare/${format}/`, form);
     return res.data;
   } catch (e) {
     if (axios.isAxiosError(e)) {

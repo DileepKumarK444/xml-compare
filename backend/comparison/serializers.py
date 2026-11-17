@@ -25,3 +25,21 @@ class CompareRequestSerializer(serializers.Serializer):
 
     def validate_modified_file(self, f):
         return self._check(f)
+
+
+class ValidateRequestSerializer(serializers.Serializer):
+    xml_file = serializers.FileField()
+    schema_file = serializers.FileField(required=False)
+
+    def _check(self, f):
+        if f.size > settings.MAX_XML_BYTES:
+            raise serializers.ValidationError("File is too large.")
+        if f.size == 0:
+            raise serializers.ValidationError("File is empty.")
+        return f
+
+    def validate_xml_file(self, f):
+        return self._check(f)
+
+    def validate_schema_file(self, f):
+        return self._check(f)

@@ -2,3 +2,28 @@
 .monaco-editor .xc-line-modified { background: #ffeb99 !important; }
 .monaco-editor .xc-line-selected { box-shadow: inset 0 0 0 2px #1565c0; }
 .monaco-editor .xc-gutter-selected { background: #1565c0; width: 4px !important; margin-left: 3px; }
+
+/* Copy-block arrows in the diff gutters (see SourceView). */
+.monaco-editor .xc-glyph-to-modified,
+.monaco-editor .xc-glyph-to-original {
+  cursor: pointer;
+  opacity: 0.75;
+}
+.monaco-editor .xc-glyph-to-modified:hover,
+.monaco-editor .xc-glyph-to-original:hover {
+  opacity: 1;
+}
+.monaco-editor .xc-glyph-to-modified::before,
+.monaco-editor .xc-glyph-to-original::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: center / 14px no-repeat;
+}
+.monaco-editor .xc-glyph-to-modified::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%231565c0' d='M3 7h6V4l5 4-5 4V9H3z'/%3E%3C/svg%3E");
+}
+.monaco-editor .xc-glyph-to-original::before {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%231565c0' d='M13 7H7V4L2 8l5 4V9h6z'/%3E%3C/svg%3E");
+}

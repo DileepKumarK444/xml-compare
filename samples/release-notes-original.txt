@@ -1,0 +1,12 @@
+Release notes - Acme Shop
+
+Version 1.0
+- Added product catalog
+- Added shopping cart
+- Fixed login timeout
+
+Known issues
+- Search is slow on large catalogs
+- Wishlist is not available yet
+
+Support: help@acme.example

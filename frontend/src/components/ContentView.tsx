@@ -10,12 +10,14 @@ import {
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useFormat } from '../formats';
 import { statusColors } from '../theme';
 import type { Attrs, CompareResult, ContentDifference, DiffFilter, TreeNode } from '../types';
 import { download } from '../utils/format';
 import { buildReport } from '../utils/report';
 import DiffNav from './DiffNav';
 import FileTitles from './FileTitles';
+import { revealInContainer } from '../utils/scroll';
 
 interface Props {
   result: CompareResult;
@@ -51,6 +53,7 @@ const changedExpanded = (root: TreeNode) => {
 };
 
 export default function ContentView({ result, visible, filter, selectedId, onSelect }: Props) {
+  const cfg = useFormat();
   const tree = result.content.tree;
   const { parent, byId } = useMemo(() => indexTree(tree), [tree]);
   const diffs = result.content.differences;
@@ -75,7 +78,7 @@ export default function ContentView({ result, visible, filter, selectedId, onSel
     if (d) {
       const n = byId.get(d.node_id);
       const rowId = n?.kind === 'attribute' ? parent.get(d.node_id) : d.node_id;
-      document.getElementById(`node-${rowId}`)?.scrollIntoView({ block: 'nearest' });
+      revealInContainer(document.getElementById(`node-${rowId}`));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
@@ -140,7 +143,7 @@ export default function ContentView({ result, visible, filter, selectedId, onSel
           size="small"
           variant="outlined"
           startIcon={<DownloadIcon />}
-          onClick={() => download('xml-compare-report.html', buildReport(result), 'text/html')}
+          onClick={() => download('xml-compare-report.html', buildReport(result, cfg), 'text/html')}
         >
           Download Comparison Report
         </Button>
