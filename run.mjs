@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Cross-platform launcher (Windows, macOS, Linux, WSL).
-// Usage: node run.mjs   (or: npm start)
+// Usage: node run.mjs [--port 5173] [--backend-port 8010]   (or: npm start)
 // Sets up the Python venv and node_modules for THIS machine when needed,
 // then starts the backend (default :8010) and the frontend (:5173).
 import { spawn, spawnSync } from 'node:child_process';
@@ -12,8 +12,12 @@ const root = dirname(fileURLToPath(import.meta.url));
 const backend = join(root, 'backend');
 const frontend = join(root, 'frontend');
 const win = process.platform === 'win32';
-const BACKEND_PORT = process.env.BACKEND_PORT || '8010';
-const FRONTEND_PORT = process.env.FRONTEND_PORT || '5173';
+const arg = (name) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i > -1 ? process.argv[i + 1] : undefined;
+};
+const BACKEND_PORT = arg('backend-port') || process.env.BACKEND_PORT || '8010';
+const FRONTEND_PORT = arg('port') || process.env.FRONTEND_PORT || '5173';
 const npm = win ? 'npm.cmd' : 'npm';
 
 const log = (m) => console.log(`\x1b[36m[xml-compare]\x1b[0m ${m}`);
@@ -67,6 +71,11 @@ if (!nodeOk()) {
     install();
     if (!nodeOk()) die('Frontend dependencies could not be installed for this system.');
   }
+}
+
+if (process.argv.includes('--setup')) {
+  log('Setup complete.');
+  process.exit(0);
 }
 
 // ---------- start both servers ----------
